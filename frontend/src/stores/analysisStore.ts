@@ -41,12 +41,16 @@ export const useAnalysisStore = defineStore('analysis', () => {
     sensitive_skin: ''
   })
 
+  const showQuestions = ref(false)
+  const triggerShowQuestions = () => { showQuestions.value = true }
+
   // Actions
   const setFile = (file: File | null) => {
     uploadState.value.file = file
     uploadState.value.previewUrl = file ? URL.createObjectURL(file) : null
     uploadState.value.validationError = null
     uploadState.value.uploadProgress = 0
+    if (!file) showQuestions.value = false
   }
 
   const setDragging = (isDragging: boolean) => {
@@ -106,6 +110,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
       gender: '',
       sensitive_skin: ''
     }
+    showQuestions.value = false
   }
 
   // Image validation
@@ -218,6 +223,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     uploadState,
     analysisState,
     userInfo,
+    showQuestions,
     
     // Actions
     setFile,
@@ -230,6 +236,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     setUserInfo,
     setAnalysisData,
     clear,
+    triggerShowQuestions,
     
     // Methods
     validateImage,

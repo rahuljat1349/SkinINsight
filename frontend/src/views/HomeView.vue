@@ -1,16 +1,18 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
+import { onMounted, onUnmounted } from 'vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 
 const router = useRouter()
 
-const handleAnalyze = () => {
-  router.push({ name: 'results' })
-}
-
 const scrollToUpload = () => {
   document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })
 }
+
+const goToAnalyze = () => router.push({ name: 'analyze' })
+
+onMounted(() => document.addEventListener('__next', goToAnalyze))
+onUnmounted(() => document.removeEventListener('__next', goToAnalyze))
 </script>
 
 <template>
@@ -90,7 +92,7 @@ const scrollToUpload = () => {
             Upload a clear photo of your face to begin your skin analysis journey.
           </p>
           <div class="upload-wrapper">
-            <ImageUpload @analyze="handleAnalyze" />
+            <ImageUpload />
           </div>
           <div class="features-row">
             <div class="feature-item">

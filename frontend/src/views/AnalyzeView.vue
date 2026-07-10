@@ -1,33 +1,19 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAnalysisStore } from '@/stores/analysisStore'
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import SkinQuestionnaire from '@/components/SkinQuestionnaire.vue'
 
 const router = useRouter()
 const store = useAnalysisStore()
-const step = ref(1)
 
+const showQuestions = ref(false)
 const hasFile = computed(() => !!store.uploadState.file)
 const isAnalyzing = computed(() => store.analysisState.isLoading)
 
-const hasAllInfo = computed(() =>
-  store.userInfo.age_group &&
-  store.userInfo.skin_type_self &&
-  store.userInfo.gender &&
-  store.userInfo.sensitive_skin
-)
-
-const canAnalyze = computed(() => hasFile.value && hasAllInfo.value && !isAnalyzing.value)
-
-// Auto-advance to step 2 when a file is selected
-watch(hasFile, (val) => {
-  if (val && step.value === 1) step.value = 2
-})
-
 const handleAnalyze = async () => {
-  if (!canAnalyze.value) return
+  if (!hasFile.value) return
   try {
     await store.analyzeImage()
     router.push({ name: 'results' })
@@ -36,9 +22,14 @@ const handleAnalyze = async () => {
   }
 }
 
+const onNext = () => { showQuestions.value = true }
+
 onMounted(() => {
-  store.clear()
-  step.value = 1
+  document.addEventListener('__next', onNext)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('__next', onNext)
 })
 </script>
 
@@ -51,20 +42,6 @@ onMounted(() => {
         <p class="page-subtitle">
           Upload a photo and tell us about yourself for a personalized skin analysis.
         </p>
-      </div>
-
-      <!-- Step indicator -->
-      <div class="steps-bar">
-        <div class="step-dot" :class="{ active: step >= 1, done: step > 1 }">
-          <span v-if="step > 1" class="step-check">&#10003;</span>
-          <span v-else class="step-num">1</span>
-          <p class="step-label">Upload Photo</p>
-        </div>
-        <div class="step-line" :class="{ done: step > 1 }"></div>
-        <div class="step-dot" :class="{ active: step >= 2 }">
-          <span class="step-num">2</span>
-          <p class="step-label">About You</p>
-        </div>
       </div>
 
       <!-- Error Alert -->
@@ -86,41 +63,26 @@ onMounted(() => {
         </button>
       </div>
 
-      <!-- Step 1: Upload -->
-      <div v-if="step === 1" class="step-panel">
-        <div class="upload-card">
+      <!-- Upload / Questionnaire / Loading Card -->
+      <div class="upload-card">
+        <template v-if="!showQuestions && !isAnalyzing">
           <ImageUpload />
-        </div>
-      </div>
+        </template>
 
-      <!-- Step 2: Questionnaire + Analyze -->
-      <div v-if="step === 2" class="step-panel">
-        <SkinQuestionnaire />
+        <template v-else-if="showQuestions && !isAnalyzing">
+          <div class="section-divider">
+            <span>Tell us about yourself</span>
+          </div>
+          <SkinQuestionnaire @analyze="handleAnalyze" />
+        </template>
 
-        <button
-          class="continue-btn"
-          :disabled="!canAnalyze"
-          @click="handleAnalyze"
-        >
-          <template v-if="isAnalyzing">
-            <span class="btn-spinner"></span>
-            Analyzing...
-          </template>
-          <template v-else>
-            Analyze My Skin
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
-            </svg>
-          </template>
-        </button>
-        <p v-if="!hasAllInfo && hasFile" class="continue-hint">Please answer all questions above to continue.</p>
-
-        <button class="back-link" @click="step = 1">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="15 18 9 12 15 6" />
-          </svg>
-          Choose a different photo
-        </button>
+        <template v-else>
+          <div class="analyzing-card">
+            <div class="big-spinner"></div>
+            <h3>Analyzing your skin...</h3>
+            <p>This usually takes a few seconds.</p>
+          </div>
+        </template>
       </div>
 
       <!-- Requirements -->
@@ -241,154 +203,59 @@ onMounted(() => {
   margin: 0 auto;
 }
 
-/* Steps Bar */
-.steps-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0;
-  margin-bottom: 2rem;
-}
-
-.step-dot {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.35rem;
-}
-
-.step-num,
-.step-check {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.9rem;
-  font-weight: 700;
-  border: 2px solid var(--border);
-  color: var(--text-muted);
-  background: var(--surface);
-  transition: all var(--t-base);
-}
-
-.step-dot.active .step-num {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: #fff;
-}
-
-.step-dot.done .step-check {
-  border-color: var(--primary);
-  background: var(--primary);
-  color: #fff;
-}
-
-.step-label {
-  font-size: 0.75rem;
-  color: var(--text-muted);
-  font-weight: 500;
-  white-space: nowrap;
-}
-
-.step-dot.active .step-label {
-  color: var(--primary);
-  font-weight: 600;
-}
-
-.step-line {
-  width: 60px;
-  height: 2px;
-  background: var(--border);
-  margin: 0 0.5rem;
-  margin-bottom: 1.5rem;
-  transition: background var(--t-base);
-}
-
-.step-line.done {
-  background: var(--primary);
-}
-
-/* Step panels */
-.step-panel {
-  animation: fadeIn 0.25s ease;
-}
-
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(8px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-
-/* Button spinner */
-.btn-spinner {
-  width: 18px;
-  height: 18px;
-  border: 2.5px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
-  border-radius: 50%;
-  animation: spin 0.6s linear infinite;
-}
-
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
 
-/* Continue button */
-.continue-btn {
+.section-divider {
   display: flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  width: 100%;
-  max-width: 360px;
-  margin: 0 auto;
-  padding: 0.875rem 1.5rem;
-  background: var(--primary);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all var(--t-base);
-}
-
-.continue-btn:hover:not(:disabled) {
-  background: var(--primary-dark);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
-}
-
-.continue-btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.continue-hint {
-  text-align: center;
-  font-size: 0.8rem;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
   color: var(--text-muted);
-  margin-top: 0.5rem;
-}
-
-/* Back link */
-.back-link {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.3rem;
   font-size: 0.85rem;
-  color: var(--text-secondary);
-  padding: 0;
-  border: none;
-  background: none;
-  cursor: pointer;
-  transition: color var(--t-fast);
-  margin-top: 1rem;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
 }
 
-.back-link:hover {
-  color: var(--primary);
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Analyzing state */
+.analyzing-card {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+  box-shadow: var(--shadow-md);
+}
+
+.analyzing-card h3 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.analyzing-card p {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+}
+
+.big-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  margin: 0 auto 1rem;
 }
 
 /* Error Alert */
