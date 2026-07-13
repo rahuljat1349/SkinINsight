@@ -9,7 +9,7 @@ class Settings(BaseSettings):
     """Application settings"""
     
     # Application
-    app_name: str = "Skin Insight AI"
+    app_name: str = "CutiS"
     app_version: str = "1.0.0"
     debug: bool = False
     
@@ -36,8 +36,12 @@ class Settings(BaseSettings):
     llm_provider: str = "mistral"  # "mistral" or "gemini"
     llm_api_key: str = ""  # Mistral API key (from LLM_API_KEY env)
     llm_api_key_gemini: str = ""  # Gemini API key (from LLM_API_KEY_GEMINI env)
-    llm_model: str = "mistral-small-latest"  # Mistral: mistral-small-latest, Gemini: gemini-1.5-flash
+    llm_model: str = "mistral-small-latest"
     llm_timeout_seconds: int = 30
+
+    # Pipeline mode
+    send_image_to_llm: str = "false"  # "false" = CV only, "true" = LLM only, "hybrid" = both
+    fallback_to_local_models: bool = False  # If True, use deterministic fallback when LLM fails
     
     # Performance targets
     target_face_detection_ms: int = 100

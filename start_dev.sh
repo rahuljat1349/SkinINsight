@@ -1,9 +1,9 @@
 #!/bin/bash
 
-# Skin Insight AI - Development Startup Script
+# CutiS - Development Startup Script
 # This script starts both the backend and frontend for development
 
-echo "🚀 Starting Skin Insight AI Development Environment"
+echo "🚀 Starting CutiS Development Environment"
 echo "=================================================="
 
 # Check if we're in the right directory

@@ -1,8 +1,11 @@
 """LangGraph-based Pipeline Orchestrator"""
 
+import logging
 import time
 from typing import Any, Dict, Optional
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from app.graph.graph import LangGraphPipeline, create_analysis_graph
 from app.schemas.analysis import AnalysisResponse
@@ -143,12 +146,9 @@ class LangGraphPipelineOrchestrator:
     
     def _log_performance(self, total_time: float) -> None:
         """Log performance metrics"""
-        print(f"LangGraph Pipeline Performance:")
-        print(f"  Total: {total_time:.2f} ms")
-        print(f"  Target: <{self.TARGET_TOTAL_MS} ms (excluding LLM)")
-        
+        logger.info("Pipeline: total=%.0fms, target=<%dms", total_time, self.TARGET_TOTAL_MS)
         if total_time > self.TARGET_TOTAL_MS:
-            print(f"  WARNING: Total time exceeds target by {total_time - self.TARGET_TOTAL_MS:.2f} ms")
+            logger.warning("Pipeline exceeded target by %.0fms", total_time - self.TARGET_TOTAL_MS)
 
 
 # Singleton instance

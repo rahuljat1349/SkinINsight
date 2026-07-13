@@ -1,4 +1,4 @@
-# Skin Insight AI
+# CutiS
 
 > AI-powered skin analysis — upload a photo or capture from camera to get educational insights about your skin condition, type, and suitable skincare ingredients.
 

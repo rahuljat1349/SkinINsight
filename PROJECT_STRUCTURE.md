@@ -1,8 +1,8 @@
-# Skin Insight AI - Project Structure
+# CutiS - Project Structure
 
 ## Overview
 
-This document describes the complete file structure of the Skin Insight AI project, which includes:
+This document describes the complete file structure of the CutiS project, which includes:
 
 - **Backend**: FastAPI (Python) application with AI-powered skin analysis
 - **Frontend**: Vue 3 + TypeScript + Vite web application
@@ -251,8 +251,8 @@ skinpro/
    npm run build
    
    # Docker
-   docker build -t skin-insight-ai .
-   docker run -p 8000:8000 skin-insight-ai
+   docker build -t cutis .
+   docker run -p 8000:8000 cutis
    ```
 
 4. **Access**:

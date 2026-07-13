@@ -1,7 +1,7 @@
 {
-  "name": "skin-insight-ai-frontend",
+  "name": "cutis-frontend",
   "version": "1.0.0",
-  "description": "Skin Insight AI - Frontend Application",
+  "description": "CutiS - Frontend Application",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -1,9 +1,12 @@
 """Main LangGraph Pipeline for Skin Analysis"""
 
+import logging
 from typing import Any, Dict, List, Optional, Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import numpy as np
 import cv2
+
+logger = logging.getLogger(__name__)
 
 from langgraph.graph import StateGraph as Graph, START, END
 
@@ -19,6 +22,8 @@ from app.graph.nodes.recommendation_node import RecommendationNode
 from app.graph.nodes.explainer import ExplainerNode
 from app.graph.nodes.response_builder import ResponseBuilderNode
 from app.graph.nodes.error_handler import ErrorHandlerNode
+from app.graph.nodes.direct_llm_node import DirectLLMNode
+from app.core.config import settings
 
 
 # Conditional edge functions
@@ -29,6 +34,21 @@ def check_error_and_continue(node_name: str) -> Callable[[AnalysisState], str]:
             return "error_handler"
         return node_name
     return check
+
+
+def start_router(state: AnalysisState) -> str:
+    """Route based on pipeline mode: false=CV, true=LLM, hybrid=CV+LLM"""
+    mode = settings.send_image_to_llm
+    if mode == "true":
+        return "direct_llm"
+    return "image_decoder"
+
+
+def hybrid_router(state: AnalysisState) -> str:
+    """After response_builder, run direct LLM if hybrid mode"""
+    if settings.send_image_to_llm == "hybrid" and not state.get("is_error_state", False):
+        return "direct_llm"
+    return END
 
 
 def check_quality_passed(state: AnalysisState) -> str:
@@ -98,11 +118,24 @@ class LangGraphPipeline:
         graph.add_node("explainer", ExplainerNode())
         graph.add_node("response_builder", ResponseBuilderNode())
         graph.add_node("error_handler", ErrorHandlerNode())
+        graph.add_node("direct_llm", DirectLLMNode())
+        graph.add_node("hybrid_merger", self._hybrid_merger)
         
         # Define the workflow edges
         
-        # START -> Decode Image
-        graph.add_edge(START, "image_decoder")
+        # START -> Direct LLM or Decode Image
+        graph.add_conditional_edges(
+            START,
+            start_router,
+            {"direct_llm": "direct_llm", "image_decoder": "image_decoder"}
+        )
+        
+        # Direct LLM -> Response Builder (for pure LLM mode)
+        graph.add_conditional_edges(
+            "direct_llm",
+            check_error_and_continue("response_builder"),
+            {"response_builder": "response_builder", "error_handler": "error_handler"}
+        )
         
         # Decode Image -> Detect Face
         graph.add_conditional_edges(
@@ -181,9 +214,16 @@ class LangGraphPipeline:
             {"response_builder": "response_builder", "error_handler": "error_handler"}
         )
         
-        # Response Builder -> END or Error Handler
+        # Response Builder -> Hybrid Merger, Direct LLM, or END
         graph.add_conditional_edges(
             "response_builder",
+            hybrid_router,
+            {"direct_llm": "direct_llm", END: END}
+        )
+        
+        # Hybrid Merger -> END
+        graph.add_conditional_edges(
+            "hybrid_merger",
             lambda state: "error_handler" if state.get("is_error_state", False) else END,
             {"error_handler": "error_handler", END: END}
         )
@@ -275,7 +315,7 @@ class LangGraphPipeline:
                     try:
                         results[name] = future.result()
                     except Exception as e:
-                        print(f"Error in analyzer {name}: {e}")
+                        logger.error("Error in analyzer %s: %s", name, e)
                         results[name] = self._get_default_result(name)
             
             # Update state
@@ -356,6 +396,41 @@ class LangGraphPipeline:
         }
         return defaults.get(analyzer_name, None)
     
+    def _hybrid_merger(self, state: AnalysisState) -> AnalysisState:
+        """Merge CV pipeline results with Direct LLM results for hybrid mode"""
+        llm_summary = state.get("summary")
+        llm_explanation = state.get("explanation")
+        llm_home = state.get("home_remedies")
+        llm_wishing = state.get("wishing_message")
+        llm_recs = state.get("recommendations")
+        llm_interactions = state.get("interactions")
+
+        if not any([llm_summary, llm_explanation, llm_home, llm_wishing, llm_recs]):
+            return state
+
+        cv_response = state.get("response")
+        if not cv_response:
+            return state
+
+        merged = dict(cv_response)
+        if llm_summary:
+            merged["summary"] = llm_summary
+        if llm_explanation:
+            merged["explanation"] = llm_explanation
+        if llm_home:
+            merged["home_remedies"] = llm_home
+        if llm_wishing:
+            merged["wishing_message"] = llm_wishing
+        if llm_recs:
+            merged["recommendations"] = llm_recs
+        if llm_interactions:
+            merged["interactions"] = llm_interactions
+
+        new_state = state.copy()
+        new_state["response"] = merged
+        new_state["errors"] = state.get("errors", [])
+        return new_state
+
     def analyze_image(
         self,
         image_bytes: bytes,

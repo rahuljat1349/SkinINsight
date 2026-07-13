@@ -245,15 +245,17 @@ const handleNext = () => {
       <!-- Preview (file or captured) -->
       <div v-else-if="previewUrl" class="preview-container">
         <img :src="previewUrl" alt="Preview" class="preview-image" />
+        <div class="preview-overlay">
+          <button class="next-btn" @click.stop="handleNext">
+            <span>Next</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
         <button class="remove-btn" @click.stop="removeFile" title="Remove image">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-          </svg>
-        </button>
-        <button class="next-btn" @click.stop="handleNext">
-          <span>Next</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
       </div>
@@ -381,15 +383,30 @@ const handleNext = () => {
   height: 16px;
 }
 
-/* Next button in preview */
+/* Preview overlay */
+.preview-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.preview-container:hover .preview-overlay {
+  opacity: 1;
+}
+
+/* Next button centered on image */
 .next-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  width: 100%;
-  margin-top: 1rem;
-  padding: 0.75rem 1.25rem;
+  padding: 0.75rem 2rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   border: none;
@@ -399,8 +416,6 @@ const handleNext = () => {
   cursor: pointer;
   transition: all var(--t-base);
   box-shadow: 0 4px 14px rgba(99, 102, 241, 0.25);
-  position: relative;
-  z-index: 2;
 }
 
 .next-btn:hover {
@@ -517,7 +532,104 @@ const handleNext = () => {
 }
 
 @media (max-width: 768px) {
-  .upload-area {
+/* Mode toggle */
+.mode-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.mode-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mode-btn.active {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: rgba(99, 102, 241, 0.06);
+}
+
+.mode-btn:hover {
+  border-color: var(--primary);
+}
+
+/* Camera view */
+.camera-view {
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.camera-video {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  border-radius: 8px;
+  background: #000;
+}
+
+.capture-btn {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 4px solid white;
+  background: rgba(255, 255, 255, 0.3);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.capture-btn:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: scale(1.05);
+}
+
+.capture-btn svg {
+  color: white;
+}
+
+.camera-close {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s ease;
+}
+
+.camera-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.upload-area {
     padding: 1.5rem;
     min-height: 250px;
   }

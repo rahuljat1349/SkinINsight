@@ -101,11 +101,7 @@ const next = () => {
 
 <style scoped>
 .q-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  padding: var(--sp-xl);
-  box-shadow: var(--shadow-md);
+  padding: var(--sp-sm) 0 0;
   animation: fadeSlideIn 0.25s ease;
 }
 

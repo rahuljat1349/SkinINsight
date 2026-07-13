@@ -1,6 +1,6 @@
-# Skin Insight AI - Testing Guide
+# CutiS - Testing Guide
 
-This guide provides instructions for testing the complete Skin Insight AI application, including backend API and frontend integration.
+This guide provides instructions for testing the complete CutiS application, including backend API and frontend integration.
 
 ## 🏗️ Prerequisites
 
@@ -106,7 +106,7 @@ curl http://localhost:8000/health
 ```bash
 curl http://localhost:8000/
 # Expected response:
-# {"name": "Skin Insight AI", "version": "1.0.0", "docs": "/docs"}
+# {"name": "CutiS", "version": "1.0.0", "docs": "/docs"}
 ```
 
 #### Image Analysis
@@ -238,7 +238,7 @@ kill -9 <PID>
 **Backend:**
 ```bash
 # .env file
-APP_NAME=Skin Insight AI
+APP_NAME=CutiS
 APP_VERSION=1.0.0
 DEBUG=true
 HOST=0.0.0.0

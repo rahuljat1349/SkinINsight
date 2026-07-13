@@ -1,5 +1,6 @@
-"""Skin Insight AI - Main Application"""
+"""CutiS - Main Application"""
 
+import logging
 import os
 import time
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, status, Request
@@ -26,6 +27,15 @@ from app.schemas.analysis import AnalysisResponse
 from app.schemas.errors import ErrorResponse
 
 
+# Logging setup
+logging.basicConfig(
+    level=logging.DEBUG if settings.debug else logging.INFO,
+    format="%(asctime)s | %(levelname)-8s | %(name)s | %(message)s",
+    datefmt="%Y-%m-%d %H:%M:%S",
+)
+logger = logging.getLogger("cutis")
+
+
 # Create FastAPI app
 app = FastAPI(
     title=settings.app_name,
@@ -34,6 +44,10 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+logger.info("Starting CutiS v%s", settings.app_version)
+logger.info("LLM provider: %s, model: %s", settings.llm_provider, settings.llm_model)
+logger.info("Pipeline mode: send_image_to_llm=%s", settings.send_image_to_llm)
 
 # Set up CORS
 app.add_middleware(
@@ -44,8 +58,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Rate limiter: 1 request per 60 seconds per IP
-rate_limiter = RateLimiter(max_requests=1, window_seconds=60)
+# Rate limiter: 1 request per 15 seconds per IP
+rate_limiter = RateLimiter(max_requests=1, window_seconds=15)
 
 
 @app.middleware("http")
@@ -130,6 +144,9 @@ async def analyze_image(
         # Read image bytes
         image_bytes = await file.read()
         
+        logger.info("Analyze request: file=%s, size=%d bytes, age=%s, skin=%s, gender=%s, sensitive=%s",
+                     file.filename, len(image_bytes), age_group, skin_type_self, gender, sensitive_skin)
+        
         # Validate file size
         if len(image_bytes) > settings.max_image_size_bytes:
             raise ImageTooLargeError(len(image_bytes), settings.max_image_size_bytes)
@@ -169,16 +186,15 @@ async def analyze_image(
         
         processing_time = (time.time() - start_time) * 1000
         
-        # Add processing time to response metadata (for development)
-        # In production, this would be in response headers
+        logger.info("Analysis complete: processing_time=%.0fms, score=%s",
+                     processing_time, analysis_response.overall_score)
         
         return analysis_response
         
     except HTTPException:
-        # Re-raise HTTPExceptions (they're already properly formatted)
         raise
     except Exception as e:
-        # Catch any unexpected errors
+        logger.error("Analysis failed: %s", str(e), exc_info=True)
         raise InternalInferenceError(str(e))
 
 

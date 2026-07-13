@@ -1,4 +1,4 @@
-# Dockerfile for Skin Insight AI Backend
+# Dockerfile for CutiS Backend
 # Multi-stage build for smaller final image
 
 # Build stage

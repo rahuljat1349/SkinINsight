@@ -2,18 +2,18 @@
   <div class="about-view">
     <div class="container">
       <div class="about-header">
-        <h1 class="about-title">About Skin Insight AI</h1>
+        <h1 class="about-title">About CutiS</h1>
         <p class="about-subtitle">
           AI-powered skin analysis providing educational insights about your skin.
         </p>
       </div>
 
       <section class="about-section">
-        <h2 class="section-title">What is Skin Insight AI?</h2>
+        <h2 class="section-title">What is CutiS?</h2>
         <div class="content-grid">
           <div class="content-text">
             <p>
-              Skin Insight AI is an innovative web application that uses artificial intelligence 
+              CutiS is an innovative web application that uses artificial intelligence 
               to analyze your facial skin from a single photograph. It provides educational insights 
               about your skin condition, skin type, and recommends suitable skincare ingredients.
             </p>
@@ -159,7 +159,7 @@
             </div>
             <h3>Not a Medical Device</h3>
             <p>
-              Skin Insight AI is <strong>NOT</strong> a medical diagnostic tool. 
+              CutiS is <strong>NOT</strong> a medical diagnostic tool. 
               Our analysis is for educational purposes only and does not replace 
               professional dermatological advice, diagnosis, or treatment.
             </p>
@@ -246,7 +246,7 @@
       </section>
 
       <div class="about-footer">
-        <p>Skin Insight AI - Version 1.0.0</p>
+        <p>CutiS - Version 1.0.0</p>
         <p>&copy; {{ new Date().getFullYear() }} All rights reserved.</p>
       </div>
     </div>

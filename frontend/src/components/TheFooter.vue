@@ -12,12 +12,9 @@
                 </linearGradient>
               </defs>
               <rect width="32" height="32" rx="8" fill="url(#fg)" />
-              <circle cx="16" cy="16" r="9" fill="none" stroke="white" stroke-width="1.8" />
-              <path d="M11 16.5c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" />
-              <path d="M13 17c0-1.7 1.3-3 3-3s3 1.3 3 3" stroke="white" stroke-width="1.3" stroke-linecap="round" />
-              <circle cx="16" cy="18.5" r="1.5" fill="white" opacity="0.9" />
+              <text x="16" y="22" text-anchor="middle" fill="white" font-size="18" font-weight="800" font-family="Arial, sans-serif">C</text>
             </svg>
-            <span class="footer-brand-text">Skin Insight AI</span>
+            <span class="footer-brand-text">CutiS</span>
           </div>
           <p class="footer-desc">
             AI-powered skin analysis providing educational insights about your skin.
@@ -36,8 +33,8 @@
         </div>
       </div>
       <div class="footer-bottom">
-        <span>&copy; {{ new Date().getFullYear() }} Skin Insight AI</span>
-        <span class="footer-version">v1.0.0</span>
+        <span>&copy; {{ new Date().getFullYear() }} CutiS</span>
+        <span>Made By Rahul Dudi</span>
       </div>
     </div>
   </footer>

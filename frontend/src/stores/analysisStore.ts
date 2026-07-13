@@ -44,6 +44,14 @@ export const useAnalysisStore = defineStore('analysis', () => {
   const showQuestions = ref(false)
   const triggerShowQuestions = () => { showQuestions.value = true }
 
+  const COOLDOWN_MS = 5 * 60 * 1000
+  const lastAnalysisTime = ref(0)
+
+  const getCooldownRemaining = (): number => {
+    const elapsed = Date.now() - lastAnalysisTime.value
+    return Math.max(0, COOLDOWN_MS - elapsed)
+  }
+
   // Actions
   const setFile = (file: File | null) => {
     uploadState.value.file = file
@@ -147,6 +155,17 @@ export const useAnalysisStore = defineStore('analysis', () => {
       throw new Error('Please complete all questions about yourself before analyzing.')
     }
 
+    const remaining = getCooldownRemaining()
+    if (remaining > 0) {
+      const secs = Math.ceil(remaining / 1000)
+      const mins = Math.floor(secs / 60)
+      const secsLeft = secs % 60
+      const msg = mins > 0
+        ? `Please wait ${mins}m ${secsLeft}s before the next analysis.`
+        : `Please wait ${secs}s before the next analysis.`
+      throw new Error(msg)
+    }
+
     setProcessing(true)
     setAnalysisLoading(true)
     setAnalysisError(null)
@@ -192,6 +211,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
 
       const result: AnalysisResponse = await response.json()
       setUploadProgress(100)
+      lastAnalysisTime.value = Date.now()
       
       // Store the result
       setAnalysisData(result, URL.createObjectURL(uploadState.value.file))
@@ -240,6 +260,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
     
     // Methods
     validateImage,
-    analyzeImage
+    analyzeImage,
+    getCooldownRemaining
   }
 })

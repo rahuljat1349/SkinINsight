@@ -1,51 +1,31 @@
 """Explainer Node for LangGraph Pipeline"""
 
 from typing import Any, Dict, List, Optional
-
-from pydantic import BaseModel
+import concurrent.futures
 
 from app.graph.state import AnalysisState
 from app.core.config import settings
-from app.schemas.analysis import (
-    AcneSeverity,
-    PigmentationLevel,
-    PoreSize,
-    RednessLevel,
-    SkinType,
-    WrinkleLevel
-)
+from app.schemas.llm_output import LLMOutput
 
 
 class ExplainerNode:
     """
     Node that uses LLM to generate natural language explanations.
-    
-    Only node using an LLM.
-    
-    Input:
-    - Aggregated analysis
-    - Recommendations
-    
-    Output:
-    - explanation: Natural-language explanation
-    - summary: Brief summary
-    
-    The LLM must:
-    - explain
-    - educate
-    - summarize
-    
-    The LLM must not:
-    - diagnose
-    - prescribe medication
-    - invent observations
     """
-    
+
+    FALLBACK_SUMMARY = (
+        "**Educational Note:** Our AI analysis completed the visual assessment of your skin, "
+        "but we were unable to generate the full AI-powered explanation at this time. "
+        "Below are your raw analysis scores — use them as a starting point for your skincare journey. "
+        "For personalized medical advice, please consult a qualified dermatologist."
+    )
+
     def __init__(self):
         self.name = "explainer"
         self.llm_enabled = settings.llm_enabled
         self.llm_model = settings.llm_model
-    
+        self.fallback_enabled = settings.fallback_to_local_models
+
     def __call__(self, state: AnalysisState) -> AnalysisState:
         """Generate LLM explanation"""
         aggregated = state.get("aggregated_analysis", {})
@@ -53,38 +33,46 @@ class ExplainerNode:
         recommendations = state.get("recommendations", [])
         overall_score = state.get("overall_score", 0)
         user_info = state.get("user_info", {})
-        
+
         if not self.llm_enabled:
-            # Fallback to deterministic summary generation
-            summary = self._generate_deterministic_summary(
-                skin_type, aggregated, recommendations, overall_score
-            )
-            
-            new_state = state.copy()
-            new_state["summary"] = summary
-            new_state["explanation"] = summary  # Use same for explanation if LLM disabled
-            new_state["interactions"] = []
-            new_state["home_remedies"] = ""
-            new_state["wishing_message"] = ""
-            new_state["errors"] = state.get("errors", [])
-            return new_state
-        
+            if self.fallback_enabled:
+                return self._fallback_state(state, aggregated, skin_type, recommendations, overall_score)
+            raise RuntimeError("LLM is disabled and no fallback configured")
+
         try:
-            # Build prompt
             prompt = self._build_prompt(
                 aggregated, skin_type, recommendations, overall_score, user_info
             )
-            
-            # Call LLM
             return self._call_llm(prompt, state)
-            
+
         except Exception as e:
+            if self.fallback_enabled:
+                return self._fallback_state(state, aggregated, skin_type, recommendations, overall_score)
             error_msg = f"LLM explanation failed: {str(e)}"
             new_state = state.copy()
             new_state["current_error"] = error_msg
             new_state["is_error_state"] = True
             new_state["errors"] = state.get("errors", []) + [error_msg]
             return new_state
+
+    def _fallback_state(
+        self,
+        state: AnalysisState,
+        aggregated: Dict[str, Any],
+        skin_type: Optional[str],
+        recommendations: List[Dict[str, Any]],
+        overall_score: int,
+    ) -> AnalysisState:
+        outputs = self._generate_deterministic_outputs(skin_type, aggregated, recommendations, overall_score)
+        new_state = state.copy()
+        new_state["summary"] = outputs["summary"]
+        new_state["explanation"] = outputs["summary"]
+        new_state["home_remedies"] = outputs["home_remedies"]
+        new_state["wishing_message"] = outputs["wishing_message"]
+        new_state["recommendations"] = recommendations or []
+        new_state["interactions"] = []
+        new_state["errors"] = state.get("errors", [])
+        return new_state
     
     def _build_prompt(
         self,
@@ -176,155 +164,130 @@ Respond in a friendly, informative, and inclusive tone."""
         
         return "\n".join(lines)
     
-    def _format_recommendations(self, recommendations: List[Dict[str, Any]]) -> str:
-        """Format recommendations for prompt"""
-        if not recommendations:
-            return "No specific recommendations generated."
-        
-        lines = ["Recommended Ingredients:"]
-        for rec in recommendations:
-            lines.append(f"  - {rec.get('ingredient', 'Unknown')}: {rec.get('reason', '')}")
-            lines.append(f"    Priority: {rec.get('priority', 'N/A')}")
-        
-        return "\n".join(lines)
-    
     def _call_llm(self, prompt: str, state: AnalysisState) -> AnalysisState:
-        """Call LLM via LangChain to generate explanation, summary, recommendations, and interactions"""
+        """Call LLM via LangChain with structured output"""
+        from langchain_core.messages import SystemMessage, HumanMessage
+
         provider = settings.llm_provider
+        api_key = settings.llm_api_key_gemini if provider == "gemini" else settings.llm_api_key
         model_name = settings.llm_model
 
-        api_key = settings.llm_api_key_gemini if provider == "gemini" else settings.llm_api_key
-        if not api_key:
-            print(f"No API key configured for provider '{provider}', using deterministic fallback")
-            summary = self._generate_deterministic_summary(None, None, None, 0)
-            new_state = state.copy()
-            new_state["summary"] = summary
-            new_state["explanation"] = summary
-            new_state["interactions"] = []
-            new_state["errors"] = state.get("errors", [])
-            return new_state
+        request_timeout = 30
 
-        try:
-            from langchain_core.prompts import ChatPromptTemplate
-            from langchain_core.messages import SystemMessage, HumanMessage
+        if provider == "gemini":
+            from langchain_google_genai import ChatGoogleGenerativeAI
+            llm = ChatGoogleGenerativeAI(
+                model=model_name or "gemini-3.5-flash",
+                google_api_key=api_key,
+                temperature=0.3,
+                max_tokens=2000,
+                request_timeout=request_timeout,
+            )
+        else:
+            from langchain_mistralai import ChatMistralAI
+            llm = ChatMistralAI(
+                model=model_name or "mistral-small-latest",
+                api_key=api_key,
+                temperature=0.3,
+                max_tokens=2000,
+                timeout=request_timeout,
+            )
 
-            if provider == "gemini":
-                from langchain_google_genai import ChatGoogleGenerativeAI
-                llm = ChatGoogleGenerativeAI(
-                    model=model_name or "gemini-1.5-flash",
-                    google_api_key=api_key,
-                    temperature=0.3,
-                    max_tokens=2000,
-                )
-            else:
-                from langchain_mistralai import ChatMistralAI
-                llm = ChatMistralAI(
-                    model=model_name or "mistral-small-latest",
-                    api_key=api_key,
-                    temperature=0.3,
-                    max_tokens=2000,
-                )
+        structured_llm = llm.with_structured_output(LLMOutput)
+        messages = [
+            SystemMessage(content=(
+                "You are a knowledgeable skincare consultant. "
+                "Never diagnose, prescribe medication, or invent observations."
+            )),
+            HumanMessage(content=prompt),
+        ]
 
-            class Recommendation(BaseModel):
-                ingredient: str
-                priority: str
-                reason: str
-                suggested_frequency: Optional[str] = None
-                usage_notes: Optional[str] = None
-                precautions: Optional[str] = None
+        timeout = request_timeout
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as executor:
+            future = executor.submit(structured_llm.invoke, messages)
+            result = future.result(timeout=timeout)
 
-            class Interaction(BaseModel):
-                ingredients: list[str]
-                reason: str
-                suggestion: str
-
-            class LLMOutput(BaseModel):
-                explanation: str
-                summary: str
-                recommendations: list[Recommendation]
-                interactions: list[Interaction]
-                home_remedies: str
-                wishing_message: str
-
-            structured_llm = llm.with_structured_output(LLMOutput)
-
-            result = structured_llm.invoke([
-                SystemMessage(content=(
-                    "You are a knowledgeable skincare consultant. "
-                    "Never diagnose, prescribe medication, or invent observations."
-                )),
-                HumanMessage(content=prompt),
-            ])
-
-            new_state = state.copy()
-            new_state["explanation"] = result.explanation or result.summary
-            new_state["summary"] = result.summary or result.explanation
-            new_state["recommendations"] = [
-                r.dict() if hasattr(r, 'dict') else r
-                for r in (result.recommendations or [])
-            ]
-            new_state["interactions"] = [
-                i.dict() if hasattr(i, 'dict') else i
-                for i in (result.interactions or [])
-            ]
-            new_state["home_remedies"] = getattr(result, "home_remedies", "")
-            new_state["wishing_message"] = getattr(result, "wishing_message", "")
-            new_state["errors"] = state.get("errors", [])
-            return new_state
-
-        except ImportError as e:
-            print(f"LangChain package not installed: {e}, using deterministic fallback")
-        except Exception as e:
-            print(f"LLM call failed ({provider}): {e}, using deterministic fallback")
-
-        summary = self._generate_deterministic_summary(None, None, None, 0)
         new_state = state.copy()
-        new_state["summary"] = summary
-        new_state["explanation"] = summary
-        new_state["recommendations"] = state.get("recommendations", [])
-        new_state["interactions"] = []
-        new_state["home_remedies"] = ""
-        new_state["wishing_message"] = ""
+        new_state["explanation"] = result.explanation or result.summary
+        new_state["summary"] = result.summary or result.explanation
+        new_state["recommendations"] = [
+            r.model_dump() for r in (result.recommendations or [])
+        ]
+        new_state["interactions"] = [
+            i.model_dump() for i in (result.interactions or [])
+        ]
+        new_state["home_remedies"] = result.home_remedies or ""
+        new_state["wishing_message"] = result.wishing_message or ""
         new_state["errors"] = state.get("errors", [])
         return new_state
-    
-    def _generate_deterministic_summary(
+
+    def _generate_deterministic_outputs(
         self,
         skin_type: Optional[str],
         aggregated: Optional[Dict[str, Any]],
         recommendations: Optional[List[Dict[str, Any]]],
-        overall_score: int
-    ) -> str:
-        """Generate deterministic summary as fallback"""
-        summary_parts = []
-        
+        overall_score: int,
+    ) -> Dict[str, str]:
+        redness = aggregated.get("redness", "N/A") if aggregated else "N/A"
+        oiliness = aggregated.get("oiliness", 50) if aggregated else 50
+        hydration = aggregated.get("hydration", 50) if aggregated else 50
+        wrinkles = aggregated.get("wrinkles", "N/A") if aggregated else "N/A"
+        pores = aggregated.get("pores", "N/A") if aggregated else "N/A"
+
+        home = [
+            "Here are some gentle natural approaches you can consider alongside your regular skincare routine:",
+        ]
+        if isinstance(oiliness, (int, float)) and oiliness > 60:
+            home.append("- **Aloe Vera** — Apply fresh aloe vera gel to help balance oil production and soothe the skin.")
+            home.append("- **Green Tea Toner** — Brew green tea, let it cool, and use as a gentle toner.")
+        if isinstance(hydration, (int, float)) and hydration < 40:
+            home.append("- **Honey Mask** — Raw honey is a natural humectant. Apply for 15 minutes and rinse.")
+            home.append("- **Cucumber Slices** — Place cool cucumber slices on your face to boost hydration.")
+        if "High" in str(redness) or "Moderate" in str(redness):
+            home.append("- **Chamomile Compress** — Brew chamomile tea, cool it, and use as a compress to calm redness.")
+            home.append("- **Oatmeal Mask** — Finely ground oatmeal mixed with yogurt soothes sensitive or red skin.")
+        if "Moderate" in str(wrinkles) or "Severe" in str(wrinkles):
+            home.append("- **Aloe Vera & Vitamin E** — Mix aloe vera gel with vitamin E oil and apply nightly.")
+        if "Large" in str(pores):
+            home.append("- **Ice Cubes** — Gently rub an ice cube wrapped in a cloth to temporarily tighten pores.")
+        home.append("")
+        home.append("> **Remember:** Home remedies are complementary — not a replacement for professional skincare advice. Always patch-test new ingredients.")
+
+        wishing = (
+            "Thank you for using **CutiS**! Your skin is unique, and this analysis is a starting point "
+            "for your skincare journey. Small, consistent steps lead to the best results. "
+            "For personalized medical advice, please consult a qualified dermatologist."
+        )
+
+        summary_parts = [self.FALLBACK_SUMMARY]
         if skin_type:
-            summary_parts.append(f"Your skin type is {skin_type}.")
-        
+            summary_parts.append(f"**Skin Type:** {skin_type}")
+        if overall_score:
+            label = "Excellent" if overall_score >= 80 else "Good" if overall_score >= 60 else "Fair" if overall_score >= 40 else "Needs Improvement"
+            summary_parts.append(f"**Overall Score:** {overall_score}/100 — {label}")
         if aggregated:
-            oiliness = aggregated.get("oiliness", 50)
-            hydration = aggregated.get("hydration", 50)
-            
-            if oiliness > 70:
-                summary_parts.append("Your skin shows high oiliness.")
-            elif oiliness < 30:
-                summary_parts.append("Your skin shows low oiliness.")
-            else:
-                summary_parts.append("Your skin has balanced oil levels.")
-            
-            if hydration < 40:
-                summary_parts.append("Your skin appears dehydrated and could benefit from additional moisture.")
-            elif hydration > 70:
-                summary_parts.append("Your skin is well-hydrated.")
-            else:
-                summary_parts.append("Your skin hydration levels are adequate.")
-        
+            summary_parts.append("")
+            summary_parts.append("### Analysis Results")
+            summary_parts.append(f"- **Oiliness:** {oiliness}/100")
+            summary_parts.append(f"- **Hydration:** {hydration}/100")
+            summary_parts.append(f"- **Redness Level:** {redness}")
+            summary_parts.append(f"- **Pigmentation:** {aggregated.get('pigmentation', 'N/A')}")
+            summary_parts.append(f"- **Wrinkles:** {wrinkles}")
+            summary_parts.append(f"- **Pores:** {pores}")
+            summary_parts.append(f"- **Texture:** {aggregated.get('texture', 50)}/100")
+            acne = aggregated.get("acne", {})
+            summary_parts.append(f"- **Acne:** {getattr(acne, 'severity', 'N/A')}")
         if recommendations:
-            summary_parts.append("Based on your analysis, we recommend focusing on:")
-            for rec in recommendations[:3]:  # Top 3 recommendations
-                summary_parts.append(f"  - {rec.get('ingredient', 'Unknown')}: {rec.get('reason', '')}")
-        
-        summary_parts.append("\nRemember: This analysis provides educational information only. "
-                           "It is not a medical diagnosis. For personalized advice, please consult with a dermatologist.")
-        
-        return " ".join(summary_parts)
+            summary_parts.append("")
+            summary_parts.append("### Recommended Ingredients")
+            for rec in recommendations[:5]:
+                summary_parts.append(f"- **{rec.get('ingredient', 'Unknown')}** ({rec.get('priority', 'Medium')}): {rec.get('reason', '')}")
+        summary_parts.append("")
+        summary_parts.append("---")
+        summary_parts.append("*This analysis is AI-generated and for educational purposes only.*")
+
+        return {
+            "summary": "\n\n".join(summary_parts),
+            "home_remedies": "\n\n".join(home),
+            "wishing_message": wishing,
+        }

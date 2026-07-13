@@ -1,4 +1,4 @@
-"""LangGraph Pipeline for Skin Insight AI"""
+"""LangGraph Pipeline for CutiS"""
 
 # Avoid circular imports by using lazy imports
 __all__ = ["AnalysisState", "create_analysis_graph", "LangGraphPipeline"]

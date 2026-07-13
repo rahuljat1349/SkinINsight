@@ -3,7 +3,7 @@
   "configVersion": 1,
   "workspaces": {
     "": {
-      "name": "skin-insight-ai-frontend",
+      "name": "cutis-frontend",
       "dependencies": {
         "pinia": "^2.1.7",
         "vue": "^3.4.0",

@@ -1,9 +1,12 @@
 """Pipeline Orchestrator"""
 
+import logging
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Dict, List, Optional, Tuple
 import numpy as np
+
+logger = logging.getLogger(__name__)
 
 from app.analyzers.base import BaseAnalyzer
 from app.analyzers.oiliness import OilinessAnalyzer
@@ -255,7 +258,7 @@ class PipelineOrchestrator:
                 try:
                     results[task_name] = future.result()
                 except Exception as e:
-                    print(f"Error in analyzer {task_name}: {e}")
+                    logger.error("Error in analyzer %s: %s", task_name, e)
                     # Set default values for failed analyzers
                     results[task_name] = self._get_default_result(task_name)
         
@@ -470,12 +473,8 @@ class PipelineOrchestrator:
         recommendation_time: float
     ):
         """Log performance metrics"""
-        print(f"Pipeline Performance:")
-        print(f"  Total: {total_time:.2f} ms")
-        print(f"  Face Detection: {face_detection_time:.2f} ms (target: {self.TARGET_FACE_DETECTION_MS} ms)")
-        print(f"  Alignment: {alignment_time:.2f} ms")
-        print(f"  Parsing: {parsing_time:.2f} ms (target: {self.TARGET_FACE_PARSING_MS} ms)")
-        print(f"  Analysis: {analysis_time:.2f} ms (target: {self.TARGET_ANALYSIS_MS} ms)")
-        print(f"  Aggregation: {aggregation_time:.2f} ms")
-        print(f"  Recommendation: {recommendation_time:.2f} ms (target: {self.TARGET_RECOMMENDATION_MS} ms)")
-        print(f"  Target: <{self.settings.target_total_pipeline_ms} ms")
+        logger.info("Pipeline Performance: total=%.0fms, face=%.0fms, align=%.0fms, parse=%.0fms, "
+                     "analysis=%.0fms, agg=%.0fms, rec=%.0fms, target=<%dms",
+                     total_time, face_detection_time, alignment_time, parsing_time,
+                     analysis_time, aggregation_time, recommendation_time,
+                     self.settings.target_total_pipeline_ms)

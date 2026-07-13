@@ -15,13 +15,9 @@ const route = useRoute()
             </linearGradient>
           </defs>
           <rect width="32" height="32" rx="8" fill="url(#logoGrad)" />
-          <circle cx="16" cy="16" r="9" fill="none" stroke="white" stroke-width="1.8" />
-          <path d="M11 16.5c0-2.8 2.2-5 5-5s5 2.2 5 5" stroke="white" stroke-width="1.5" stroke-linecap="round" />
-          <path d="M13 17c0-1.7 1.3-3 3-3s3 1.3 3 3" stroke="white" stroke-width="1.3" stroke-linecap="round" />
-          <circle cx="16" cy="18.5" r="1.5" fill="white" opacity="0.9" />
-          <path d="M10 13l2 1M22 13l-2 1" stroke="white" stroke-width="1.2" stroke-linecap="round" />
+          <text x="16" y="22" text-anchor="middle" fill="white" font-size="18" font-weight="800" font-family="Arial, sans-serif">C</text>
         </svg>
-        <span class="logo-text">Skin<span class="logo-accent">Insight</span></span>
+        <span class="logo-text">CutiS</span>
       </RouterLink>
 
       <nav class="nav">
@@ -78,10 +74,6 @@ const route = useRoute()
 .logo-text {
   font-size: 1.3rem;
   letter-spacing: -0.02em;
-}
-
-.logo-accent {
-  color: var(--primary);
 }
 
 .nav {

@@ -1,4 +1,4 @@
-# Skin Insight AI — Technical Specification (v2.0)
+# CutiS — Technical Specification (v2.0)
 
 ## Architecture
 

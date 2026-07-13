@@ -383,6 +383,8 @@ const getSeverityColor = (severity: string) => {
 /* Score */
 .score-section {
   margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
 }
 
 .score-card {
@@ -455,6 +457,8 @@ const getSeverityColor = (severity: string) => {
 /* Image */
 .image-section {
   margin-bottom: 1.5rem;
+  display: flex;
+  justify-content: center;
 }
 
 .image-frame {

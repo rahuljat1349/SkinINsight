@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Skin Insight AI - Full Application Test Script
+CutiS - Full Application Test Script
 
 This script tests:
 1. Backend API endpoints
@@ -44,7 +44,7 @@ def test_health_endpoints():
     # Test root endpoint
     response = client.get('/')
     assert response.status_code == 200
-    assert response.json()['name'] == 'Skin Insight AI'
+    assert response.json()['name'] == 'CutiS'
     print("   ✅ Root endpoint: OK")
     
     # Test API docs endpoint
@@ -139,7 +139,7 @@ def test_api_response_structure():
 
 def main():
     """Run all tests"""
-    print("🚀 Skin Insight AI - Full Application Test")
+    print("🚀 CutiS - Full Application Test")
     print("=" * 50)
     
     try:
