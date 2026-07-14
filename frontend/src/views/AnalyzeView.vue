@@ -25,7 +25,11 @@ const handleAnalyze = async () => {
 const onNext = () => {
   const scrollY = window.scrollY
   showQuestions.value = true
-  nextTick(() => window.scrollTo(0, scrollY))
+  nextTick(() => {
+    if (window.scrollY !== scrollY) {
+      window.scrollTo(0, scrollY)
+    }
+  })
 }
 
 onMounted(() => {
@@ -295,6 +299,7 @@ onUnmounted(() => {
   min-height: 400px;
   display: flex;
   flex-direction: column;
+  overflow-anchor: none;
 }
 
 .upload-card.card-centered {
