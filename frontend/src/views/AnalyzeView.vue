@@ -235,10 +235,6 @@ onUnmounted(() => {
 .analyzing-card {
   text-align: center;
   padding: 2.5rem 1.5rem;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--r-xl);
-  box-shadow: var(--shadow-md);
 }
 
 .analyzing-card h3 {
