@@ -68,7 +68,7 @@ onUnmounted(() => {
       </div>
 
       <!-- Upload / Questionnaire / Loading Card -->
-      <div class="upload-card">
+      <div class="upload-card" :class="{ 'card-centered': showQuestions && !isAnalyzing }">
         <template v-if="!showQuestions && !isAnalyzing">
           <ImageUpload />
         </template>
@@ -299,6 +299,9 @@ onUnmounted(() => {
   min-height: 400px;
   display: flex;
   flex-direction: column;
+}
+
+.upload-card.card-centered {
   justify-content: center;
 }
 
