@@ -294,6 +294,7 @@ onUnmounted(() => {
   border-radius: var(--r-xl);
   padding: var(--sp-xl);
   box-shadow: var(--shadow-md);
+  min-height: 400px;
 }
 
 /* Requirements */
@@ -396,6 +397,7 @@ onUnmounted(() => {
   .page-title { font-size: 1.75rem; }
   .req-grid { grid-template-columns: repeat(2, 1fr); }
   .privacy-card { flex-direction: column; text-align: center; }
+  .upload-card { min-height: 340px; padding: 1.25rem; }
 }
 
 @media (max-width: 480px) {
