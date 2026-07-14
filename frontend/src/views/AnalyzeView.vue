@@ -297,6 +297,9 @@ onUnmounted(() => {
   padding: var(--sp-xl);
   box-shadow: var(--shadow-md);
   min-height: 400px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
 }
 
 /* Requirements */
