@@ -139,7 +139,7 @@ onUnmounted(() => document.removeEventListener('__next', handleNext))
               </div>
             </template>
           </div>
-          <div class="features-row">
+          <div v-if="!store.uploadState.file && !showQuestions && !isAnalyzing" class="features-row">
             <div class="feature-item">
               <div class="feature-icon icon-skin">
                 <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
