@@ -24,11 +24,18 @@ const handleAnalyze = async () => {
 
 const onNext = () => {
   const scrollY = window.scrollY
+  const body = document.body
+  body.style.overflow = 'hidden'
+  body.style.position = 'fixed'
+  body.style.top = `-${scrollY}px`
+  body.style.width = '100%'
   showQuestions.value = true
   nextTick(() => {
-    if (window.scrollY !== scrollY) {
-      window.scrollTo(0, scrollY)
-    }
+    body.style.overflow = ''
+    body.style.position = ''
+    body.style.top = ''
+    body.style.width = ''
+    window.scrollTo(0, scrollY)
   })
 }
 
