@@ -243,19 +243,19 @@ const handleNext = () => {
       </div>
 
       <!-- Preview (file or captured) -->
-      <div v-else-if="previewUrl" class="preview-container">
-        <img :src="previewUrl" alt="Preview" class="preview-image" />
-        <div class="preview-overlay">
-          <button class="next-btn" @click.stop="handleNext">
-            <span>Next</span>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <polyline points="9 18 15 12 9 6" />
+      <div v-else-if="previewUrl">
+        <div class="preview-container">
+          <img :src="previewUrl" alt="Preview" class="preview-image" />
+          <button class="remove-btn" @click.stop="removeFile" title="Remove image">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
             </svg>
           </button>
         </div>
-        <button class="remove-btn" @click.stop="removeFile" title="Remove image">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+        <button class="next-btn" @click="handleNext">
+          <span>Next</span>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6" />
           </svg>
         </button>
       </div>
@@ -383,30 +383,15 @@ const handleNext = () => {
   height: 16px;
 }
 
-/* Preview overlay */
-.preview-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 0, 0, 0.35);
-  border-radius: 8px;
-  opacity: 0;
-  transition: opacity 0.2s ease;
-}
-
-.preview-container:hover .preview-overlay {
-  opacity: 1;
-}
-
-/* Next button centered on image */
+/* Next button below image */
 .next-btn {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
+  width: 100%;
   padding: 0.75rem 2rem;
+  margin-top: 1rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   border: none;

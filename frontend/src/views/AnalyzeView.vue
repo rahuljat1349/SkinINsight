@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAnalysisStore } from '@/stores/analysisStore'
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import SkinQuestionnaire from '@/components/SkinQuestionnaire.vue'
 
@@ -23,9 +23,7 @@ const handleAnalyze = async () => {
 }
 
 const onNext = () => {
-  const scrollY = window.scrollY
   showQuestions.value = true
-  nextTick(() => window.scrollTo(0, scrollY))
 }
 
 onMounted(() => {
