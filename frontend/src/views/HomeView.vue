@@ -136,6 +136,7 @@ onUnmounted(() => document.removeEventListener('__next', handleNext))
               <div class="analyzing-state">
                 <div class="spinner"></div>
                 <p>Analyzing your skin...</p>
+                <p class="analyzing-hint">This usually takes a few seconds.</p>
               </div>
             </template>
           </div>
@@ -601,6 +602,7 @@ onUnmounted(() => document.removeEventListener('__next', handleNext))
 .analyzing-state p {
   color: var(--text-secondary);
   font-weight: 500;
+  text-align: center;
 }
 
 @keyframes spin {
