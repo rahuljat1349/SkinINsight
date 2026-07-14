@@ -178,12 +178,12 @@ const next = () => {
 
 /* Action button */
 .q-btn {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.45rem;
-  width: 100%;
   max-width: 360px;
+  margin: 0 auto;
   padding: 0.8rem 1.5rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
