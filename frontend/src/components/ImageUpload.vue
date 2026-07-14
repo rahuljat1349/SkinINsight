@@ -347,6 +347,7 @@ const handleNext = (e: Event) => {
   position: relative;
   width: 100%;
   max-width: 400px;
+  margin: 0 auto;
 }
 
 .preview-image {
@@ -523,8 +524,7 @@ const handleNext = (e: Event) => {
   color: var(--primary);
 }
 
-@media (max-width: 768px) {
-/* Mode toggle */
+/* Mode toggle (all screen sizes) */
 .mode-toggle {
   display: flex;
   gap: 0.5rem;
@@ -621,7 +621,8 @@ const handleNext = (e: Event) => {
   background: rgba(0, 0, 0, 0.7);
 }
 
-.upload-area {
+@media (max-width: 768px) {
+  .upload-area {
     padding: 1.5rem;
     min-height: 250px;
   }
