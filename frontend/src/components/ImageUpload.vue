@@ -252,12 +252,14 @@ const handleNext = () => {
             </svg>
           </button>
         </div>
-        <button class="next-btn" @click="handleNext">
-          <span>Next</span>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <polyline points="9 18 15 12 9 6" />
-          </svg>
-        </button>
+        <div class="next-wrapper">
+          <button class="next-btn" @click="handleNext">
+            <span>Next</span>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <polyline points="9 18 15 12 9 6" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <!-- Validation error -->
@@ -384,14 +386,17 @@ const handleNext = () => {
 }
 
 /* Next button below image */
+.next-wrapper {
+  text-align: center;
+  margin-top: 1rem;
+}
+
 .next-btn {
-  display: flex;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  width: 100%;
   padding: 0.75rem 2rem;
-  margin-top: 1rem;
   background: linear-gradient(135deg, var(--primary), var(--secondary));
   color: white;
   border: none;
