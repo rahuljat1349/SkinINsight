@@ -244,7 +244,7 @@ const handleNext = (e: Event) => {
       </div>
 
       <!-- Preview (file or captured) -->
-      <div v-else-if="previewUrl">
+      <div v-else-if="previewUrl" style="width:100%">
         <div class="preview-container">
           <img :src="previewUrl" alt="Preview" class="preview-image" />
           <button class="remove-btn" @click.stop="removeFile" title="Remove image">
@@ -390,6 +390,7 @@ const handleNext = (e: Event) => {
 .next-wrapper {
   text-align: center;
   margin-top: 1rem;
+  width: 100%;
 }
 
 .next-btn {
