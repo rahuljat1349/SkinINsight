@@ -190,14 +190,17 @@ export const useAnalysisStore = defineStore('analysis', () => {
       setUploadProgress(90)
 
       if (!response.ok) {
-        const errorData: ErrorResponse = await response.json().catch(() => ({
+        const rawError = await response.json().catch(() => ({}))
+        
+        // Normalize error to expected shape
+        const errorData: ErrorResponse = {
           error: {
-            code: 'unknown_error',
-            message: `HTTP ${response.status}`,
-            user_message: 'An error occurred while processing your image.'
+            code: rawError?.error?.code || 'server_error',
+            message: rawError?.error?.message || `HTTP ${response.status}`,
+            user_message: rawError?.error?.user_message || 'An error occurred while processing your image.'
           },
           success: false
-        }))
+        }
         
         setAnalysisError(errorData)
         
@@ -206,7 +209,7 @@ export const useAnalysisStore = defineStore('analysis', () => {
           setValidationError(errorData.error.user_message)
         }
         
-        throw new Error(errorData.error?.user_message || 'Analysis failed')
+        throw new Error(errorData.error.user_message)
       }
 
       const result: AnalysisResponse = await response.json()

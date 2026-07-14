@@ -4,6 +4,7 @@ import logging
 import os
 import time
 from fastapi import FastAPI, File, Form, UploadFile, HTTPException, status, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
@@ -60,6 +61,22 @@ app.add_middleware(
 
 # Rate limiter: 1 request per 15 seconds per IP
 rate_limiter = RateLimiter(max_requests=1, window_seconds=15)
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Return validation errors in the app's standard error format."""
+    return JSONResponse(
+        status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+        content={
+            "error": {
+                "code": "validation_error",
+                "message": str(exc),
+                "user_message": "Invalid request. Please check your input and try again."
+            },
+            "success": False
+        }
+    )
 
 
 @app.middleware("http")

@@ -57,7 +57,7 @@ onUnmounted(() => {
         </svg>
         <div class="error-content">
           <h4>Analysis Error</h4>
-          <p>{{ store.analysisState.error.error.user_message }}</p>
+          <p>{{ store.analysisState.error?.error?.user_message || 'An unknown error occurred' }}</p>
         </div>
         <button @click="store.setAnalysisError(null)" class="error-close">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
