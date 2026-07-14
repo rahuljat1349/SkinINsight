@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
 import { useAnalysisStore } from '@/stores/analysisStore'
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import ImageUpload from '@/components/ImageUpload.vue'
 import SkinQuestionnaire from '@/components/SkinQuestionnaire.vue'
 
@@ -23,20 +23,7 @@ const handleAnalyze = async () => {
 }
 
 const onNext = () => {
-  const scrollY = window.scrollY
-  const body = document.body
-  body.style.overflow = 'hidden'
-  body.style.position = 'fixed'
-  body.style.top = `-${scrollY}px`
-  body.style.width = '100%'
   showQuestions.value = true
-  nextTick(() => {
-    body.style.overflow = ''
-    body.style.position = ''
-    body.style.top = ''
-    body.style.width = ''
-    window.scrollTo(0, scrollY)
-  })
 }
 
 onMounted(() => {
@@ -79,25 +66,22 @@ onUnmounted(() => {
       </div>
 
       <!-- Upload / Questionnaire / Loading Card -->
-      <div class="upload-card" :class="{ 'card-centered': showQuestions && !isAnalyzing }">
-        <template v-if="!showQuestions && !isAnalyzing">
-          <ImageUpload />
-        </template>
-
-        <template v-else-if="showQuestions && !isAnalyzing">
-          <div class="section-divider">
-            <span>Tell us about yourself</span>
+      <div class="upload-card">
+        <div class="card-states">
+          <div v-show="!showQuestions && !isAnalyzing" class="card-state card-state-top">
+            <ImageUpload />
           </div>
-          <SkinQuestionnaire @analyze="handleAnalyze" />
-        </template>
 
-        <template v-else>
-          <div class="analyzing-card">
+          <div v-show="showQuestions && !isAnalyzing" class="card-state card-state-centered">
+            <SkinQuestionnaire @analyze="handleAnalyze" />
+          </div>
+
+          <div v-show="isAnalyzing" class="card-state card-state-centered">
             <div class="big-spinner"></div>
             <h3>Analyzing your skin...</h3>
             <p>This usually takes a few seconds.</p>
           </div>
-        </template>
+        </div>
       </div>
 
       <!-- Requirements -->
