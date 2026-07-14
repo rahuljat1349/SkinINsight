@@ -1,18 +1,52 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import { onMounted, onUnmounted } from 'vue'
+import { useAnalysisStore } from '@/stores/analysisStore'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import ImageUpload from '@/components/ImageUpload.vue'
+import SkinQuestionnaire from '@/components/SkinQuestionnaire.vue'
+import ResultsView from '@/views/ResultsView.vue'
 
-const router = useRouter()
+const store = useAnalysisStore()
+
+const showQuestions = ref(false)
+const showResults = ref(false)
+const isAnalyzing = ref(false)
+
+watch(() => store.analysisState.data, (data) => {
+  if (!data && showResults.value) {
+    showResults.value = false
+    showQuestions.value = false
+  }
+})
 
 const scrollToUpload = () => {
   document.getElementById('upload-section')?.scrollIntoView({ behavior: 'smooth' })
 }
 
-const goToAnalyze = () => router.push({ name: 'analyze' })
+const handleNext = () => {
+  showQuestions.value = true
+}
 
-onMounted(() => document.addEventListener('__next', goToAnalyze))
-onUnmounted(() => document.removeEventListener('__next', goToAnalyze))
+const handleAnalyze = async () => {
+  isAnalyzing.value = true
+  try {
+    await store.analyzeImage()
+    showResults.value = true
+    showQuestions.value = false
+  } catch (error) {
+    console.error('Analysis failed:', error)
+  } finally {
+    isAnalyzing.value = false
+  }
+}
+
+const resetAll = () => {
+  store.clear()
+  showQuestions.value = false
+  showResults.value = false
+}
+
+onMounted(() => document.addEventListener('__next', handleNext))
+onUnmounted(() => document.removeEventListener('__next', handleNext))
 </script>
 
 <template>
@@ -83,16 +117,27 @@ onUnmounted(() => document.removeEventListener('__next', goToAnalyze))
       </div>
     </section>
 
-    <!-- Upload & Features -->
+    <!-- Upload / Questions / Results -->
     <section class="upload-section" id="upload-section">
       <div class="container">
-        <div class="upload-card">
+        <div v-if="!showResults" class="upload-card">
           <h2 class="section-title">Get Started</h2>
           <p class="section-subtitle">
             Upload a clear photo of your face to begin your skin analysis journey.
           </p>
           <div class="upload-wrapper">
-            <ImageUpload />
+            <template v-if="!showQuestions && !isAnalyzing">
+              <ImageUpload />
+            </template>
+            <template v-else-if="showQuestions && !isAnalyzing">
+              <SkinQuestionnaire @analyze="handleAnalyze" />
+            </template>
+            <template v-else>
+              <div class="analyzing-state">
+                <div class="spinner"></div>
+                <p>Analyzing your skin...</p>
+              </div>
+            </template>
           </div>
           <div class="features-row">
             <div class="feature-item">
@@ -134,11 +179,24 @@ onUnmounted(() => document.removeEventListener('__next', goToAnalyze))
             </div>
           </div>
         </div>
+
+        <div v-else class="results-container">
+          <ResultsView />
+          <div class="reset-bar">
+            <button class="btn btn-ghost" @click="resetAll">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polyline points="1 4 1 10 7 10" />
+                <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10" />
+              </svg>
+              Start New Analysis
+            </button>
+          </div>
+        </div>
       </div>
     </section>
 
     <!-- How It Works -->
-    <section class="steps-section">
+    <section v-if="!showResults" class="steps-section">
       <div class="container">
         <h2 class="section-title">How It Works</h2>
         <p class="section-subtitle">Three simple steps to get your personalized skin analysis.</p>
@@ -520,5 +578,48 @@ onUnmounted(() => document.removeEventListener('__next', goToAnalyze))
   .steps-row { flex-direction: column; gap: 1rem; }
   .steps-connector { transform: rotate(90deg); }
   .step-card { max-width: none; width: 100%; }
+}
+
+/* Analyzing state */
+.analyzing-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 3rem 0;
+}
+
+.analyzing-state .spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+}
+
+.analyzing-state p {
+  color: var(--text-secondary);
+  font-weight: 500;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Results container */
+.results-container {
+  width: 100%;
+}
+
+.reset-bar {
+  text-align: center;
+  margin-top: 1.5rem;
+}
+
+.reset-bar .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 </style>
