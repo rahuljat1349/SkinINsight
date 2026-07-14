@@ -149,7 +149,8 @@ watch(isProcessing, (processing) => {
   }
 })
 
-const handleNext = () => {
+const handleNext = (e: Event) => {
+  e.preventDefault()
   document.dispatchEvent(new CustomEvent('__next'))
 }
 
