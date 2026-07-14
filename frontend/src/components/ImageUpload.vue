@@ -150,7 +150,7 @@ watch(isProcessing, (processing) => {
 })
 
 const handleNext = (e: Event) => {
-  e.preventDefault()
+  e.stopPropagation()
   document.dispatchEvent(new CustomEvent('__next'))
 }
 
